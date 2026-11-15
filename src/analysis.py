@@ -1,7 +1,7 @@
 """End-to-end analysis: read cache, compute all metrics, return results.
 
 This module is the glue between the cached raw data and the report
-layer. It does no network I/O — everything reads from ``data/raw/``.
+layer. It does no network I/O; everything reads from ``data/raw/``.
 """
 
 from __future__ import annotations

@@ -1,7 +1,6 @@
 """Unit tests for the pure metric functions.
 
-Every test verifies against a value computed BY HAND (shown in the
-comments), not against the implementation itself.
+Every test checks a value computed by hand, shown in the comments.
 """
 
 from __future__ import annotations

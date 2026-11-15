@@ -1,27 +1,27 @@
 # portfolio-risk-analytics
 
-A portfolio risk and performance analytics pipeline: it pulls five years of
+A portfolio risk and performance analytics pipeline. It pulls five years of
 daily prices for a fixed 15-stock US large-cap portfolio from free, keyless
 public sources, computes a standard set of risk and performance metrics,
 runs CAPM and Fama-French 3-factor regressions, and renders a self-contained
 HTML tear sheet with publication-quality charts.
 
 **What this is:** a static risk and performance analysis of a fixed,
-equal-weighted portfolio — the kind of tear sheet a risk or performance
-team produces for an existing book.
+equal-weighted portfolio, in the format a risk or performance team would
+produce for an existing book.
 
 **What this isn't:** a backtested trading strategy, a portfolio
 recommendation, or a forecast. The holdings were chosen in hindsight for
 sector diversification, so the performance statistics carry survivorship
-and selection bias (see Limitations below — this is stated in the report
-itself, not hidden here).
+and selection bias. Both the Limitations section below and the report
+itself state this.
 
 ## Portfolio
 
 Equal-weighted (rebalanced daily): AAPL, MSFT, JPM, JNJ, PG, XOM, UNH, HD,
 V, PEP, KO, DIS, CAT, NEE, COST. Benchmark: SPY. Lookback: 5 years ending
-at the most recent available trading day (the report states the exact
-window used).
+at the most recent available trading day. The report states the exact
+window used.
 
 ## Setup and run
 
@@ -44,65 +44,66 @@ analysis is fully reproducible offline. To force a re-pull:
 
 | Series | Primary source | Fallback chain |
 |---|---|---|
-| Daily adjusted closes (15 holdings + SPY) | Yahoo Finance via `yfinance` (dividend- and split-adjusted) | per-ticker yfinance retry → stooq.com CSV (split-adjusted only; flagged in the report if used) |
-| Risk-free rate | FRED series `DGS3MO` (3-month Treasury CMT yield) via `pandas-datareader` | FRED fredgraph CSV endpoint → hardcoded constant (loudly flagged in the report if used) |
-| Fama-French daily 3-factor returns | Ken French Data Library (Dartmouth Tuck) via `pandas-datareader` | direct zip download → Internet Archive snapshot of the same official zip |
+| Daily adjusted closes (15 holdings + SPY) | Yahoo Finance via `yfinance` (dividend- and split-adjusted) | per-ticker yfinance retry, then stooq.com CSV (split-adjusted only; flagged in the report if used) |
+| Risk-free rate | FRED series `DGS3MO` (3-month Treasury CMT yield) via `pandas-datareader` | FRED fredgraph CSV endpoint, then a hardcoded constant (loudly flagged in the report if used) |
+| Fama-French daily 3-factor returns | Ken French Data Library (Dartmouth Tuck) via `pandas-datareader` | direct zip download, then an Internet Archive snapshot of the same official zip |
 
 All pulls use retry-with-backoff. The report's **Data Provenance** table
-records which source actually supplied each series on the run that
-produced it — the tear sheet reflects what really happened, not the happy
-path.
+records which source supplied each series on the run that produced it,
+including any fallbacks that triggered.
 
 ## Output
 
 `scripts/run_analysis.py` writes to `output/`:
 
-- `tear_sheet.html` — a self-contained (charts embedded) one-to-two page
-  report: performance and risk metrics for the portfolio and SPY,
-  historical and Gaussian VaR at 95%/99%, max-drawdown dates, CAPM and
-  FF3 regression tables with t-stats and p-values, a written
-  interpretation generated from the computed numbers, a methodology and
-  limitations section, and the data provenance table.
-- `cumulative_return.png`, `drawdown.png`, `rolling_volatility.png`,
-  `correlation_heatmap.png` — the standalone charts.
+- `tear_sheet.html` is a self-contained one-to-two page report with the
+  charts embedded. It covers performance and risk metrics for the
+  portfolio and SPY, historical and Gaussian VaR at 95%/99%, max-drawdown
+  dates, CAPM and FF3 regression tables with t-stats and p-values, a
+  written interpretation generated from the computed numbers, a
+  methodology and limitations section, and the data provenance table.
+- `cumulative_return.png`, `drawdown.png`, `rolling_volatility.png`, and
+  `correlation_heatmap.png` are the four charts as standalone files.
 
 From the run on the five-year window ending Nov 13, 2026 (1,254 trading
 days): the equal-weight portfolio returned 13.4% annualized at 13.6% vol
 (Sharpe 0.70) vs. SPY's 11.6% at 17.3% (Sharpe 0.49), with a max drawdown
-of −15.3% (Jan 2022 → Jun 2022, recovered Apr 2023) vs. −24.5% for SPY.
-CAPM beta 0.64; the CAPM alpha of ~4% a year is not statistically
-significant (p ≈ 0.25) and shrinks to ~0.4% (p ≈ 0.91) once the
-Fama-French size and value factors are controlled for — i.e., the
-"outperformance" is factor tilts, not selection skill. Your numbers will
-differ slightly: the window end moves with the run date.
+of −15.3% (Jan 2022 to Jun 2022, recovered Apr 2023) vs. −24.5% for SPY.
+CAPM beta is 0.64. The CAPM alpha of about 4% a year has a p-value of
+0.25, and in the Fama-French regression it shrinks to about 0.4% a year
+(p = 0.91); the three-factor fit attributes the extra return over SPY to
+defensive size and value tilts. Your numbers will differ slightly because
+the window end moves with the run date.
 
 ## Methodology and limitations (summary)
 
-The full, specific version is in the tear sheet; headlines:
+The full version is in the tear sheet; headlines:
 
-- **Survivorship/selection bias.** The 15 names are currently listed,
-  successful large caps chosen in hindsight. Performance stats are biased
-  upward relative to any real ex-ante selection. Structural to the
-  exercise; not correctable with better data.
-- **Adjusted close ≠ true total return.** Yahoo adjusted closes
-  approximate dividend reinvestment at the ex-date close, ignore taxes
-  and costs. Any stooq-fallback ticker lacks dividend adjustment entirely
-  (the provenance table says if this happened; on the committed run, none
-  did).
-- **Daily rebalancing is free here, not in reality.** Portfolio return is
-  the cross-sectional mean of constituent returns each day: zero
-  transaction costs, taxes, or spreads. Equal weighting is a deliberate
-  stated choice; it drives part of the deviation from cap-weighted SPY.
+- **Survivorship and selection bias.** The 15 names are currently listed,
+  successful large caps chosen in hindsight. Performance statistics are
+  biased upward relative to any real ex-ante selection. The bias comes
+  from how the names were picked, so better price data cannot remove it.
+- **Adjusted close approximates total return.** Yahoo adjusted closes
+  model dividend reinvestment at the ex-date close and exclude taxes and
+  trading costs. A stooq-fallback ticker would also lack dividend
+  adjustment; the provenance table records whether this happened (on the
+  committed run it did not).
+- **Daily rebalancing costs nothing in this model.** Portfolio return is
+  the cross-sectional mean of constituent returns each day, which assumes
+  zero transaction costs, taxes, and spread. Equal weighting is a stated
+  choice; it drives part of the deviation from cap-weighted SPY.
 - **VaR is unconditional and backward-looking.** Historical VaR assumes
-  the past five years' distribution is representative; Gaussian VaR
+  the past five years' distribution is representative. Gaussian VaR
   understates equity tail risk by construction.
-- **Window sensitivity.** One five-year window containing one bear market
-  (2022) and a strong recovery. Sharpe, alpha, and drawdown figures move
-  materially if the window shifts; nothing here is a forecast.
-- **FF factor timing.** The Ken French library posts with a lag (and the
-  committed run used an Internet Archive snapshot of the official file,
-  dated in the provenance table), so the factor regression sample ends
-  slightly before the price window; the report prints the exact n used.
+- **Window sensitivity.** This is one five-year window containing one
+  bear market (2022) and a strong recovery. Sharpe, alpha, and drawdown
+  figures move materially if the window shifts. None of these figures is
+  a forecast.
+- **FF factor timing.** The Ken French library posts with a lag, and the
+  committed run used an Internet Archive snapshot of the official file
+  (snapshot date recorded in the provenance table), so the factor
+  regression sample ends slightly before the price window. The report
+  prints the exact n used.
 
 ## Repo structure
 
@@ -120,9 +121,9 @@ output/          rendered tear sheet + charts (gitignored)
 ## Tests
 
 `pytest` runs 23 unit tests. The metric tests verify against values
-computed by hand on synthetic series (e.g., a known price path with an
-exact −20% drawdown and known peak/trough/recovery dates; VaR on evenly
-spaced returns where the percentile is exact). The regression tests
-recover exact coefficients from noise-free constructions and check
-inference behaves sensibly on seeded noisy data. Randomness is always
-seeded; everything is reproducible.
+computed by hand on synthetic series, for example a known price path with
+an exact −20% drawdown and known peak/trough/recovery dates, and VaR on
+evenly spaced returns where the percentile falls exactly on a data point.
+The regression tests recover exact coefficients from noise-free
+constructions and check that inference behaves sensibly on seeded noisy
+data. All random draws use fixed seeds.
