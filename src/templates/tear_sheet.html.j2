@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portfolio Risk &amp; Performance Tear Sheet</title>
+<style>
+  :root {
+    --ink: #1a1d24; --muted: #5a6472; --line: #d9dee5;
+    --navy: #1f4e79; --red: #c0504d; --bg-soft: #f4f6f9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif; color: var(--ink);
+    margin: 0 auto; max-width: 980px; padding: 32px 40px; background: #fff;
+    line-height: 1.45;
+  }
+  header { border-bottom: 3px solid var(--navy); padding-bottom: 14px; margin-bottom: 22px; }
+  h1 { margin: 0 0 4px; font-size: 24px; color: var(--navy); }
+  .subtitle { color: var(--muted); font-size: 13px; }
+  h2 {
+    font-size: 15px; color: var(--navy); text-transform: uppercase;
+    letter-spacing: 0.06em; border-bottom: 1px solid var(--line);
+    padding-bottom: 5px; margin: 28px 0 12px;
+  }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { padding: 6px 10px; text-align: right; border-bottom: 1px solid var(--line); }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { background: var(--bg-soft); color: var(--ink); font-weight: 600; }
+  .num { font-variant-numeric: tabular-nums; }
+  .chart { margin: 14px 0; text-align: center; }
+  .chart img { max-width: 100%; border: 1px solid var(--line); border-radius: 4px; }
+  .summary { background: var(--bg-soft); border-left: 4px solid var(--navy);
+             padding: 14px 18px; font-size: 13.5px; border-radius: 0 4px 4px 0; }
+  .holdings { font-size: 12.5px; color: var(--muted); }
+  .flag { background: #fdf3e7; border-left: 4px solid #d9822b; padding: 10px 14px;
+          font-size: 13px; margin: 10px 0; }
+  .method dt { font-weight: 600; margin-top: 10px; }
+  .method dd { margin: 2px 0 0 0; font-size: 13px; color: #333a45; }
+  .prov { font-size: 12px; color: var(--muted); }
+  footer { margin-top: 30px; padding-top: 10px; border-top: 1px solid var(--line);
+           font-size: 11.5px; color: var(--muted); }
+  @media print { body { padding: 10px 14px; } .chart img { max-height: 300px; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Portfolio Risk &amp; Performance Tear Sheet</h1>
+  <div class="subtitle">
+    15-stock equal-weighted US large-cap portfolio vs. SPY &middot;
+    {{ start }} &ndash; {{ end }} ({{ n_days }} trading days) &middot;
+    Generated {{ generated }}
+  </div>
+  <div class="holdings" style="margin-top:6px">
+    Holdings (equal-weighted, rebalanced daily): {{ tickers | join(", ") }}
+  </div>
+</header>
+
+{% if rf_is_fallback %}
+<div class="flag"><strong>Data flag:</strong> FRED was unreachable at fetch time; the risk-free
+rate below is a hardcoded fallback constant. Re-run the fetch step to replace it.</div>
+{% endif %}
+
+<h2>Summary</h2>
+<p class="summary">{{ summary }}</p>
+
+<h2>Performance &amp; Risk Metrics</h2>
+<table>
+  <thead><tr><th>Metric</th><th>Portfolio</th><th>SPY</th></tr></thead>
+  <tbody>
+    <tr><td>Total return</td>
+        <td class="num">{{ pct(stats['portfolio']['total_return'], 1) }}</td>
+        <td class="num">{{ pct(stats['benchmark']['total_return'], 1) }}</td></tr>
+    <tr><td>Annualized return (CAGR)</td>
+        <td class="num">{{ pct(stats['portfolio']['annualized_return'], 2) }}</td>
+        <td class="num">{{ pct(stats['benchmark']['annualized_return'], 2) }}</td></tr>
+    <tr><td>Annualized volatility</td>
+        <td class="num">{{ pct(stats['portfolio']['annualized_vol'], 2) }}</td>
+        <td class="num">{{ pct(stats['benchmark']['annualized_vol'], 2) }}</td></tr>
+    <tr><td>Sharpe ratio (rf = {{ rf_annual }} avg DGS3MO)</td>
+        <td class="num">{{ "%.2f" | format(stats['portfolio']['sharpe']) }}</td>
+        <td class="num">{{ "%.2f" | format(stats['benchmark']['sharpe']) }}</td></tr>
+    <tr><td>Sortino ratio (downside deviation)</td>
+        <td class="num">{{ "%.2f" | format(stats['portfolio']['sortino']) }}</td>
+        <td class="num">{{ "%.2f" | format(stats['benchmark']['sortino']) }}</td></tr>
+    <tr><td>Maximum drawdown</td>
+        <td class="num">{{ pct(port_dd.max_drawdown, 1) }}</td>
+        <td class="num">{{ pct(bench_dd.max_drawdown, 1) }}</td></tr>
+  </tbody>
+</table>
+
+<h2>Value-at-Risk (1-day horizon)</h2>
+<table>
+  <thead><tr><th>Measure</th><th>Portfolio</th><th>SPY</th></tr></thead>
+  <tbody>
+    <tr><td>Historical VaR 95% (empirical 5th-percentile daily loss)</td>
+        <td class="num">{{ pct(stats['portfolio']['hist_var_95'], 2) }}</td>
+        <td class="num">{{ pct(stats['benchmark']['hist_var_95'], 2) }}</td></tr>
+    <tr><td>Historical VaR 99% (empirical 1st-percentile daily loss)</td>
+        <td class="num">{{ pct(stats['portfolio']['hist_var_99'], 2) }}</td>
+        <td class="num">{{ pct(stats['benchmark']['hist_var_99'], 2) }}</td></tr>
+    <tr><td>Parametric VaR 95% (Gaussian, sample &mu; and &sigma;)</td>
+        <td class="num">{{ pct(stats['portfolio']['param_var_95'], 2) }}</td>
+        <td class="num">{{ pct(stats['benchmark']['param_var_95'], 2) }}</td></tr>
+    <tr><td>Parametric VaR 99% (Gaussian, sample &mu; and &sigma;)</td>
+        <td class="num">{{ pct(stats['portfolio']['param_var_99'], 2) }}</td>
+        <td class="num">{{ pct(stats['benchmark']['param_var_99'], 2) }}</td></tr>
+  </tbody>
+</table>
+<p class="prov">VaR figures are the magnitude of the loss threshold: "95% VaR of 1.50%" means
+a 1-day loss exceeding 1.50% is expected on roughly 5% of trading days, under each method's
+assumptions.</p>
+
+<h2>Maximum Drawdown Detail</h2>
+<table>
+  <thead><tr><th></th><th>Portfolio</th><th>SPY</th></tr></thead>
+  <tbody>
+    <tr><td>Depth</td>
+        <td class="num">{{ pct(port_dd.max_drawdown, 2) }}</td>
+        <td class="num">{{ pct(bench_dd.max_drawdown, 2) }}</td></tr>
+    <tr><td>Peak (drawdown start)</td>
+        <td class="num">{{ port_dd.peak_date.strftime("%b %d, %Y") }}</td>
+        <td class="num">{{ bench_dd.peak_date.strftime("%b %d, %Y") }}</td></tr>
+    <tr><td>Trough</td>
+        <td class="num">{{ port_dd.trough_date.strftime("%b %d, %Y") }}</td>
+        <td class="num">{{ bench_dd.trough_date.strftime("%b %d, %Y") }}</td></tr>
+    <tr><td>Recovery</td>
+        <td class="num">{{ port_dd.recovery_date.strftime("%b %d, %Y") if port_dd.recovery_date else "Not yet recovered" }}</td>
+        <td class="num">{{ bench_dd.recovery_date.strftime("%b %d, %Y") if bench_dd.recovery_date else "Not yet recovered" }}</td></tr>
+  </tbody>
+</table>
+
+<h2>Factor Regressions (daily excess returns)</h2>
+<table>
+  <thead><tr><th>CAPM vs. SPY</th><th>Estimate</th><th>t-stat</th><th>p-value</th><th>Significance</th></tr></thead>
+  <tbody>
+    <tr><td>Alpha (annualized)</td>
+        <td class="num">{{ pct(capm.alpha_annualized, 2) }}</td>
+        <td class="num">{{ "%.2f" | format(capm.alpha_daily.t_stat) }}</td>
+        <td class="num">{{ "%.3f" | format(capm.alpha_daily.p_value) }}</td>
+        <td>{{ sig_label(capm.alpha_daily.p_value) }}</td></tr>
+    <tr><td>Beta</td>
+        <td class="num">{{ "%.3f" | format(capm.beta.estimate) }}</td>
+        <td class="num">{{ "%.1f" | format(capm.beta.t_stat) }}</td>
+        <td class="num">{{ "%.3f" | format(capm.beta.p_value) }}</td>
+        <td>{{ sig_label(capm.beta.p_value) }}</td></tr>
+  </tbody>
+</table>
+<p class="prov">R&sup2; = {{ "%.3f" | format(capm.r_squared) }}, n = {{ capm.n_obs }} daily observations.</p>
+
+<table style="margin-top:14px">
+  <thead><tr><th>Fama-French 3-factor</th><th>Estimate</th><th>t-stat</th><th>p-value</th><th>Significance</th></tr></thead>
+  <tbody>
+    <tr><td>Alpha (annualized)</td>
+        <td class="num">{{ pct(ff3.alpha_annualized, 2) }}</td>
+        <td class="num">{{ "%.2f" | format(ff3.alpha_daily.t_stat) }}</td>
+        <td class="num">{{ "%.3f" | format(ff3.alpha_daily.p_value) }}</td>
+        <td>{{ sig_label(ff3.alpha_daily.p_value) }}</td></tr>
+    <tr><td>Market beta (Mkt&minus;RF)</td>
+        <td class="num">{{ "%.3f" | format(ff3.mkt_beta.estimate) }}</td>
+        <td class="num">{{ "%.1f" | format(ff3.mkt_beta.t_stat) }}</td>
+        <td class="num">{{ "%.3f" | format(ff3.mkt_beta.p_value) }}</td>
+        <td>{{ sig_label(ff3.mkt_beta.p_value) }}</td></tr>
+    <tr><td>SMB (size) loading</td>
+        <td class="num">{{ "%.3f" | format(ff3.smb.estimate) }}</td>
+        <td class="num">{{ "%.1f" | format(ff3.smb.t_stat) }}</td>
+        <td class="num">{{ "%.3f" | format(ff3.smb.p_value) }}</td>
+        <td>{{ sig_label(ff3.smb.p_value) }}</td></tr>
+    <tr><td>HML (value) loading</td>
+        <td class="num">{{ "%.3f" | format(ff3.hml.estimate) }}</td>
+        <td class="num">{{ "%.1f" | format(ff3.hml.t_stat) }}</td>
+        <td class="num">{{ "%.3f" | format(ff3.hml.p_value) }}</td>
+        <td>{{ sig_label(ff3.hml.p_value) }}</td></tr>
+  </tbody>
+</table>
+<p class="prov">R&sup2; = {{ "%.3f" | format(ff3.r_squared) }}, n = {{ ff3.n_obs }} daily observations.
+Factors: Ken French Data Library daily 3-factor file; excess returns use the library's RF series.</p>
+
+<h2>Charts</h2>
+<div class="chart"><img src="data:image/png;base64,{{ charts['cumulative'] }}" alt="Cumulative return: portfolio vs SPY"></div>
+<div class="chart"><img src="data:image/png;base64,{{ charts['drawdown'] }}" alt="Drawdown over time"></div>
+<div class="chart"><img src="data:image/png;base64,{{ charts['rolling_vol'] }}" alt="Rolling 60-day annualized volatility"></div>
+<div class="chart"><img src="data:image/png;base64,{{ charts['correlation'] }}" alt="Correlation heatmap of holdings"></div>
+
+<h2>Methodology &amp; Limitations</h2>
+<dl class="method">
+  {% for item in methodology %}
+  <dt>{{ item.title }}</dt>
+  <dd>{{ item.text }}</dd>
+  {% endfor %}
+</dl>
+
+<h2>Data Provenance</h2>
+<table class="prov">
+  <thead><tr><th>Series</th><th style="text-align:left">Source actually used</th></tr></thead>
+  <tbody>
+    {% for key, src in provenance.items() %}
+    <tr><td>{{ key }}</td><td style="text-align:left">{{ src }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<footer>
+  Static risk and performance analysis of a fixed, hindsight-selected portfolio.
+  Not investment advice, not a backtest of a trading strategy, and not a forecast.
+  All figures computed from the cached raw data in <code>data/raw/</code>; see README for
+  reproduction instructions.
+</footer>
+
+</body>
+</html>
