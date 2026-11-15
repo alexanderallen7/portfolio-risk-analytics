@@ -1,5 +1,7 @@
 # portfolio-risk-analytics
 
+[![tests](https://github.com/alexanderallen7/portfolio-risk-analytics/actions/workflows/tests.yml/badge.svg)](https://github.com/alexanderallen7/portfolio-risk-analytics/actions/workflows/tests.yml)
+
 A portfolio risk and performance analytics pipeline. It pulls five years of
 daily prices for a fixed 15-stock US large-cap portfolio from free, keyless
 public sources, computes a standard set of risk and performance metrics,
