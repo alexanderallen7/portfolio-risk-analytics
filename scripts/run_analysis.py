@@ -57,7 +57,7 @@ def main() -> int:
           f"({results.n_days} trading days)")
     print(f"Risk-free (avg DGS3MO): {results.rf_annual_mean:.2%}"
           + ("  [FALLBACK CONSTANT]" if results.rf_is_fallback else ""))
-    print(f"{'Metric':<28}{'Portfolio':>12}{'SPY':>12}")
+    print(f"{'Metric':<28}{'Portfolio':>18}{'SPY':>18}")
     rows = [
         ("Total return", f"{p['total_return']:.1%}", f"{b['total_return']:.1%}"),
         ("Annualized return", f"{p['annualized_return']:.2%}", f"{b['annualized_return']:.2%}"),
@@ -71,7 +71,7 @@ def main() -> int:
          f"{b['param_var_95']:.2%} / {b['param_var_99']:.2%}"),
     ]
     for name, pv, bv in rows:
-        print(f"{name:<28}{pv:>12}{bv:>12}")
+        print(f"{name:<28}{pv:>18}{bv:>18}")
     print(f"\nCAPM:  beta={results.capm.beta.estimate:.3f}  "
           f"alpha(ann)={results.capm.alpha_annualized:.2%} "
           f"(p={results.capm.alpha_daily.p_value:.3f})  R2={results.capm.r_squared:.3f}")

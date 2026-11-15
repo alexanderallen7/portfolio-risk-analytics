@@ -25,18 +25,18 @@ class AnalysisResults:
     rf_is_fallback: bool
     provenance: dict[str, str]
 
-    port_returns: pd.Series = field(repr=False, default=None)
-    bench_returns: pd.Series = field(repr=False, default=None)
-    asset_returns: pd.DataFrame = field(repr=False, default=None)
+    port_returns: pd.Series | None = field(repr=False, default=None)
+    bench_returns: pd.Series | None = field(repr=False, default=None)
+    asset_returns: pd.DataFrame | None = field(repr=False, default=None)
 
     stats: dict[str, dict[str, Any]] = field(default_factory=dict)  # per-leg metric table
-    port_dd: metrics.DrawdownResult = None
-    bench_dd: metrics.DrawdownResult = None
-    capm: regressions.CAPMResult = None
-    ff3: regressions.FF3Result = None
-    corr: pd.DataFrame = field(repr=False, default=None)
-    port_roll_vol: pd.Series = field(repr=False, default=None)
-    bench_roll_vol: pd.Series = field(repr=False, default=None)
+    port_dd: metrics.DrawdownResult | None = None
+    bench_dd: metrics.DrawdownResult | None = None
+    capm: regressions.CAPMResult | None = None
+    ff3: regressions.FF3Result | None = None
+    corr: pd.DataFrame | None = field(repr=False, default=None)
+    port_roll_vol: pd.Series | None = field(repr=False, default=None)
+    bench_roll_vol: pd.Series | None = field(repr=False, default=None)
 
 
 def _leg_stats(returns: pd.Series, rf_daily: pd.Series | float) -> dict[str, Any]:

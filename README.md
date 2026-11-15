@@ -23,7 +23,41 @@ V, PEP, KO, DIS, CAT, NEE, COST. Benchmark: SPY. Lookback: 5 years ending
 at the most recent available trading day. The report states the exact
 window used.
 
+## Sample output
+
+A full sample run (five-year window ending Nov 13, 2026) is committed in
+[`docs/`](docs/), including the complete tear sheet
+([docs/tear_sheet.html](docs/tear_sheet.html); download and open in a
+browser, since the charts are embedded in the file). Headline results
+from that run:
+
+| Metric | Portfolio | SPY |
+|---|---|---|
+| Annualized return | 13.40% | 11.59% |
+| Annualized volatility | 13.63% | 17.33% |
+| Sharpe ratio | 0.70 | 0.49 |
+| Sortino ratio | 1.02 | 0.70 |
+| Max drawdown | −15.3% | −24.5% |
+| CAPM beta / R² | 0.644 / 0.671 | n/a |
+| FF3 alpha (annualized, p-value) | 0.38% (p = 0.91) | n/a |
+
+The CAPM alpha of about 4% a year has a p-value of 0.25, and the
+three-factor regression shrinks it to about 0.4% (p = 0.91); the fit
+attributes the extra return over SPY to defensive size and value tilts.
+Numbers from a fresh run will differ slightly because the window end
+moves with the run date.
+
+![Cumulative return: portfolio vs SPY](docs/cumulative_return.png)
+
+![Drawdown from running peak](docs/drawdown.png)
+
+![Rolling 60-day annualized volatility](docs/rolling_volatility.png)
+
+![Correlation matrix of holdings](docs/correlation_heatmap.png)
+
 ## Setup and run
+
+Requires Python 3.12+ (developed and tested on 3.14).
 
 ```
 python -m venv .venv
@@ -65,15 +99,7 @@ including any fallbacks that triggered.
 - `cumulative_return.png`, `drawdown.png`, `rolling_volatility.png`, and
   `correlation_heatmap.png` are the four charts as standalone files.
 
-From the run on the five-year window ending Nov 13, 2026 (1,254 trading
-days): the equal-weight portfolio returned 13.4% annualized at 13.6% vol
-(Sharpe 0.70) vs. SPY's 11.6% at 17.3% (Sharpe 0.49), with a max drawdown
-of −15.3% (Jan 2022 to Jun 2022, recovered Apr 2023) vs. −24.5% for SPY.
-CAPM beta is 0.64. The CAPM alpha of about 4% a year has a p-value of
-0.25, and in the Fama-French regression it shrinks to about 0.4% a year
-(p = 0.91); the three-factor fit attributes the extra return over SPY to
-defensive size and value tilts. Your numbers will differ slightly because
-the window end moves with the run date.
+The Sample output section above shows the committed run of these files.
 
 ## Methodology and limitations (summary)
 
@@ -110,12 +136,14 @@ The full version is in the tear sheet; headlines:
 ```
 data/raw/        cached pulls (gitignored; recreated by fetch_data.py)
 data/processed/  reserved for derived datasets
+docs/            committed sample run: tear sheet + charts
 src/             config, data fetching, pure metric functions,
                  regressions, charts, report rendering (+ HTML template)
 scripts/         fetch_data.py, run_analysis.py
 tests/           pytest suite: metric functions verified against
                  hand-computed values on synthetic series
 output/          rendered tear sheet + charts (gitignored)
+.github/         CI workflow that runs the test suite on every push
 ```
 
 ## Tests

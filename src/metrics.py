@@ -156,7 +156,7 @@ def correlation_matrix(asset_returns: pd.DataFrame) -> pd.DataFrame:
     return asset_returns.corr()
 
 
-def annual_yield_to_daily(annual_yield_decimal: pd.Series | float):
+def annual_yield_to_daily(annual_yield_decimal: pd.Series | float) -> pd.Series | float:
     """Convert an annualized yield (decimal, e.g. 0.045) to a per-trading-day
     simple return via geometric de-annualization."""
     return (1.0 + annual_yield_decimal) ** (1.0 / TRADING_DAYS_PER_YEAR) - 1.0
