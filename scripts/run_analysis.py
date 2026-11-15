@@ -24,8 +24,12 @@ def main() -> int:
     """Run the full offline pipeline and print a console summary."""
     missing = [p.name for p in (config.PRICES_CACHE, config.FF3_CACHE) if not p.exists()]
     if missing:
-        print(f"Cache incomplete (missing {missing}). Run scripts/fetch_data.py first.")
-        return 1
+        # First run from a clean environment: pull the data, then proceed,
+        # so the whole pipeline works with this one command.
+        print(f"Cache incomplete (missing {missing}); fetching data first ...")
+        from src.data_fetch import fetch_and_cache_all
+
+        fetch_and_cache_all()
 
     print("Computing metrics and regressions from cache ...")
     results = run_analysis()

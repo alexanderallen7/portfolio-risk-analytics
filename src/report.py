@@ -56,9 +56,9 @@ def build_summary_paragraph(r: AnalysisResults) -> str:
     rel = "outperformed" if p["annualized_return"] > b["annualized_return"] else "underperformed"
     dd = r.port_dd
     recovery_phrase = (
-        f"and recovered its prior peak on {dd.recovery_date:%b %d, %Y}"
+        f"and regaining its prior peak on {dd.recovery_date:%b %d, %Y}"
         if dd.recovery_date is not None
-        else "and had not yet recovered its prior peak by the end of the sample"
+        else "and still below its prior peak at the end of the sample"
     )
     # Attribute the drawdown to the 2022 rate-hike bear market only when
     # the dates actually fall in it; never assert a narrative the data
